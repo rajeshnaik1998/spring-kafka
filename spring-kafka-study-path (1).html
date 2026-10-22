@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spring Kafka Repository Study Path</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2937;
+      --muted: #5b6472;
+      --accent: #176b87;
+      --line: #e3e8ee;
+      --panel: #f5f8fa;
+      --link: #0866a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #eef2f5;
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 920px;
+      margin: 36px auto;
+      padding: 42px 52px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 12px 34px rgba(24, 39, 55, .08);
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0 0 14px; font-size: clamp(2rem, 4vw, 2.65rem); line-height: 1.2; }
+    .intro { color: var(--muted); font-size: 1.08rem; margin: 0 0 24px; }
+    .callout {
+      margin: 24px 0 34px;
+      padding: 16px 20px;
+      background: var(--panel);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+    }
+    h2 {
+      margin: 38px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 1.35rem;
+      line-height: 1.35;
+    }
+    h3 { margin: 22px 0 8px; font-size: 1.05rem; }
+    p { margin: 10px 0; }
+    ul, ol { padding-left: 1.45rem; }
+    li { margin: 7px 0; }
+    code {
+      padding: .13em .38em;
+      border: 1px solid #e4e9ee;
+      border-radius: 5px;
+      background: #f4f6f8;
+      font: .91em ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { text-decoration-thickness: 2px; }
+    .sequence {
+      padding: 16px 18px;
+      background: #f5f8fa;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-weight: 650;
+    }
+    footer {
+      margin-top: 42px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    @media (max-width: 640px) {
+      main { margin: 0; padding: 26px 20px; border-radius: 0; }
+      body { background: #fff; }
+    }
+    @media print {
+      body { background: #fff; }
+      main { max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; }
+      a { color: inherit; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Developer Learning Guide</p>
+  <h1>Spring Kafka Repository Study Path</h1>
+  <p class="intro">A practical, step-by-step guide to tracing a message from your application into Kafka, and then from Kafka back into your application.</p>
+
+  <div class="callout">
+    <strong>Recommended starting point:</strong> Study Topics 1–4 first to understand a basic producer and consumer. The later topics cover reliability and specialized features.
+  </div>
+
+  <h2>1. Get a Working Example</h2>
+  <p>Open <code>samples</code> and find a small producer/consumer example. Trace how it configures Kafka and sends or receives a message.</p>
+  <p>Then read the <a href="https://docs.spring.io/spring-kafka/reference/quick-tour.html" target="_blank" rel="noopener noreferrer">Spring Kafka Quick Tour</a> for the simplest end-to-end setup. The sample shows code in context; the tour explains the basic setup.</p>
+
+  <h2>2. Configuration and Factories</h2>
+  <p>These classes create the Kafka clients that Spring Kafka uses:</p>
+  <ul>
+    <li><code>core/ProducerFactory.java</code> and <code>core/DefaultKafkaProducerFactory.java</code></li>
+    <li><code>core/ConsumerFactory.java</code> and <code>core/DefaultKafkaConsumerFactory.java</code></li>
+    <li><code>config/ConcurrentKafkaListenerContainerFactory.java</code></li>
+    <li><code>config/AbstractKafkaListenerContainerFactory.java</code></li>
+  </ul>
+  <p>Focus on how factories hold Kafka client settings and supply producers or consumers. The listener container factory bridges consumer configuration and the listener that handles messages.</p>
+
+  <h2>3. Sending Messages</h2>
+  <p>Start in <code>core/</code>:</p>
+  <ul>
+    <li><code>KafkaTemplate.java</code> — the main API application code uses to send records.</li>
+    <li><code>KafkaOperations.java</code> — the interface for sending operations.</li>
+    <li><code>ProducerFactory.java</code> and <code>DefaultKafkaProducerFactory.java</code> — how the template gets Kafka producers.</li>
+  </ul>
+  <p>Follow a send call from <code>KafkaTemplate</code> toward the producer factory. You do not need to read every method; begin with the <code>send(...)</code> methods and how they handle the result.</p>
+
+  <h2>4. Receiving Messages with <code>@KafkaListener</code></h2>
+  <p>For the consumer path, focus on these classes:</p>
+  <ul>
+    <li><code>annotation/KafkaListener.java</code> — the annotation you put on your method.</li>
+    <li><code>annotation/KafkaListenerAnnotationBeanPostProcessor.java</code> — finds that annotation and registers a listener endpoint.</li>
+    <li><code>config/MethodKafkaListenerEndpoint.java</code> — represents a method-based listener.</li>
+    <li><code>config/ConcurrentKafkaListenerContainerFactory.java</code> — creates the listener container.</li>
+    <li><code>listener/KafkaMessageListenerContainer.java</code> and <code>listener/ConcurrentMessageListenerContainer.java</code> — run the consumers and deliver records.</li>
+    <li><code>listener/adapter/MessagingMessageListenerAdapter.java</code> — adapts Kafka records to the method arguments your listener expects.</li>
+  </ul>
+  <p>The core consumer loop is in <code>listener/</code>; the annotation package mostly handles configuration and registration.</p>
+
+  <h2>5. Serialization and Message Conversion</h2>
+  <p>This determines how Java values become Kafka bytes and back:</p>
+  <ul>
+    <li><code>support/serializer/</code> — Spring Kafka serializer and deserializer support.</li>
+    <li><code>support/converter/</code> — converts between Kafka records and Spring <code>Message</code> objects.</li>
+    <li><code>listener/adapter/</code> — shows how converted messages reach listener method arguments.</li>
+  </ul>
+  <p>Study this after you understand sending and receiving, since conversion sits between those operations and your application code.</p>
+
+  <h2>6. Errors, Retries, and Dead-Letter Topics</h2>
+  <p>Start with:</p>
+  <ul>
+    <li><code>listener/DefaultErrorHandler.java</code> — common listener error handling.</li>
+    <li><code>annotation/RetryableTopic.java</code> and <code>annotation/RetryableTopicAnnotationProcessor.java</code> — annotation-driven retry topics.</li>
+    <li><code>retrytopic/</code> — retry-topic configuration and support.</li>
+    <li><code>annotation/DltHandler.java</code> — marks a dead-letter-topic handler method.</li>
+  </ul>
+  <p>Learn the ordinary error-handler flow first. Then study retry topics and dead-letter-topic (DLT) handling as a separate strategy.</p>
+  <p>References: <a href="https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html" target="_blank" rel="noopener noreferrer">Handling Exceptions</a> and <a href="https://docs.spring.io/spring-kafka/reference/retrytopic.html" target="_blank" rel="noopener noreferrer">Retry Topics</a>.</p>
+
+  <h2>7. Testing Your Integration</h2>
+  <p>Open <code>spring-kafka-test/src</code>:</p>
+  <ul>
+    <li><code>EmbeddedKafkaBroker</code> and related embedded Kafka classes — run tests against a broker started for testing.</li>
+    <li><code>KafkaTestUtils</code> — helpers for test setup and assertions.</li>
+    <li><code>spring-kafka/src/test</code> — tests alongside the main implementation, useful for seeing expected behavior and edge cases.</li>
+  </ul>
+  <p>Look for tests of the class or feature you are studying. They often show how it is intended to be configured.</p>
+
+  <h2>8. Optional Features for Later</h2>
+  <p>Once basic send/receive works, explore these if your project needs them:</p>
+  <ul>
+    <li><strong>Transactions:</strong> <code>transaction/</code>, <code>KafkaTemplate</code>, and <code>DefaultKafkaProducerFactory</code>.</li>
+    <li><strong>Request/reply:</strong> <code>requestreply/</code>.</li>
+    <li><strong>Kafka Streams:</strong> <code>streams/</code> and <code>annotation/KafkaStreamsDefaultConfiguration.java</code>.</li>
+    <li><strong>Security:</strong> <code>security/jaas/</code>.</li>
+    <li><strong>Micrometer and observation:</strong> <code>support/micrometer/</code>.</li>
+  </ul>
+
+  <h2>Suggested Study Order</h2>
+  <p class="sequence">Sample → factories → <code>KafkaTemplate</code> → <code>@KafkaListener</code> registration → listener container → serialization → error handling → tests</p>
+  <p>For each topic, follow one path through the code and its tests instead of trying to read the whole module. Start with the <a href="https://docs.spring.io/spring-kafka/reference/kafka.html" target="_blank" rel="noopener noreferrer">Spring Kafka sending and receiving reference</a> alongside the source.</p>
+  <p>The exact setup can depend on whether your project uses Spring Boot and which versions it runs, so choose a sample that matches your stack.</p>
+
+  <footer>
+    Spring Kafka learning notes · Links open the official Spring Kafka reference documentation.
+  </footer>
+</main>
+</body>
+</html>
